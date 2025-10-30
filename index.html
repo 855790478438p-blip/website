@@ -1,0 +1,1577 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <title>AURA inc. | "見えない価値"を、設計する。</title>
+    
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Luxury Japanese Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Shippori+Mincho+B1:wght@400;500;600;700;800&family=Noto+Serif+JP:wght@200;300;400;500;600;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --black: #000000;
+            --charcoal: #1a1a1a;
+            --grey: #8B8B8B;
+            --light-grey: #D4D4D4;
+            --gold: #C9A961;
+            --white: #FFFFFF;
+            --spacing-xs: 16px;
+            --spacing-sm: 24px;
+            --spacing-md: 40px;
+            --spacing-lg: 60px;
+            --spacing-xl: 80px;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+        
+        body {
+            font-family: 'Shippori Mincho', 'Shippori Mincho B1', serif;
+            background: var(--black);
+            color: var(--white);
+            line-height: 1.6;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        
+        /* ==================== LOADING SCREEN ==================== */
+        .loading {
+            position: fixed;
+            inset: 0;
+            background: var(--black);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 99999;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+        
+        .loading-logo {
+            font-size: clamp(48px, 12vw, 80px);
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            color: var(--white);
+            font-family: 'Shippori Mincho B1', serif;
+            opacity: 0;
+            animation: fadeIn 1s ease forwards;
+        }
+        
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+        
+        .loading-bar {
+            width: min(300px, 80vw);
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .loading-progress {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0;
+            background: var(--gold);
+            transition: width 0.3s ease;
+        }
+        
+        /* ==================== DESKTOP CURSOR ==================== */
+        .cursor,
+        .cursor-follower {
+            display: none;
+        }
+        
+        @media (min-width: 1024px) {
+            .cursor {
+                display: block;
+                width: 6px;
+                height: 6px;
+                background: var(--gold);
+                border-radius: 50%;
+                position: fixed;
+                pointer-events: none;
+                z-index: 99999;
+                mix-blend-mode: difference;
+            }
+            .cursor-follower {
+                display: block;
+                width: 40px;
+                height: 40px;
+                border: 1px solid var(--gold);
+                border-radius: 50%;
+                position: fixed;
+                pointer-events: none;
+                z-index: 99998;
+                opacity: 0.5;
+            }
+        }
+        
+        /* ==================== WEBGL CANVAS ==================== */
+        #canvas {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            opacity: 0.4;
+        }
+        
+        /* ==================== HEADER ==================== */
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            padding: clamp(16px, 2.5vh, 24px) clamp(40px, 6vw, 100px);
+            background: transparent;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        header.scrolled {
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(20px) saturate(180%);
+            -webkit-backdrop-filter: blur(20px) saturate(180%);
+            padding: clamp(12px, 2vh, 18px) clamp(40px, 6vw, 100px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+        }
+        
+        .header-container {
+            max-width: 1920px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: clamp(18px, 3vw, 24px);
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            color: var(--white);
+            text-decoration: none;
+            font-family: 'Shippori Mincho B1', serif;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        @media (min-width: 1024px) {
+            .logo:hover {
+                color: var(--gold);
+                letter-spacing: 0.18em;
+            }
+        }
+        
+        /* ==================== DESKTOP NAV ==================== */
+        .nav-desktop {
+            display: none;
+        }
+        
+        @media (min-width: 1024px) {
+            .nav-desktop {
+                display: flex;
+                align-items: center;
+                gap: clamp(32px, 4vw, 56px);
+            }
+            
+            .nav-desktop .nav-link {
+                font-size: clamp(13px, 1.2vw, 15px);
+                font-weight: 400;
+                letter-spacing: 0.08em;
+                color: var(--white);
+                text-decoration: none;
+                transition: all 0.3s ease;
+                position: relative;
+                padding: 8px 0;
+                text-transform: uppercase;
+                font-family: 'Shippori Mincho', serif;
+            }
+            
+            .nav-desktop .nav-link::after {
+                content: '';
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 0;
+                height: 1px;
+                background: var(--gold);
+                transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            
+            .nav-desktop .nav-link:hover {
+                color: var(--gold);
+            }
+            
+            .nav-desktop .nav-link:hover::after {
+                width: 100%;
+            }
+        }
+        
+        /* ==================== HAMBURGER MENU ==================== */
+        .menu-toggle {
+            width: 30px;
+            height: 24px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 0;
+            position: relative;
+            z-index: 1001;
+        }
+        
+        @media (min-width: 1024px) {
+            .menu-toggle {
+                display: none;
+            }
+        }
+        
+        .menu-toggle span {
+            width: 100%;
+            height: 2px;
+            background: var(--white);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            transform-origin: center;
+        }
+        
+        .menu-toggle.active span:nth-child(1) {
+            transform: rotate(45deg) translate(7px, 7px);
+        }
+        
+        .menu-toggle.active span:nth-child(2) {
+            opacity: 0;
+            transform: scale(0);
+        }
+        
+        .menu-toggle.active span:nth-child(3) {
+            transform: rotate(-45deg) translate(7px, -7px);
+        }
+        
+        /* ==================== MOBILE NAV ==================== */
+        .nav-mobile {
+            position: fixed;
+            top: 0;
+            right: -100%;
+            width: 100%;
+            height: 100vh;
+            background: rgba(31, 47, 51, 0.65);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: clamp(28px, 5vh, 40px);
+            transition: right 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+            overflow: hidden;
+        }
+        
+        .nav-mobile::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: 
+                radial-gradient(circle at 25% 35%, rgba(201, 169, 97, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 75% 65%, rgba(201, 169, 97, 0.06) 0%, transparent 55%);
+            pointer-events: none;
+            opacity: 0.8;
+        }
+        
+        .nav-mobile.active {
+            right: 0;
+        }
+        
+        .nav-mobile .nav-link {
+            font-size: clamp(32px, 7vw, 44px);
+            color: var(--white);
+            text-decoration: none;
+            letter-spacing: 0.12em;
+            font-weight: 400;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            font-family: 'Shippori Mincho B1', serif;
+            position: relative;
+            padding: 16px 32px;
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        
+        .nav-mobile.active .nav-link {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .nav-mobile.active .nav-link:nth-child(1) { transition-delay: 0.10s; }
+        .nav-mobile.active .nav-link:nth-child(2) { transition-delay: 0.18s; }
+        .nav-mobile.active .nav-link:nth-child(3) { transition-delay: 0.26s; }
+        .nav-mobile.active .nav-link:nth-child(4) { transition-delay: 0.34s; }
+        .nav-mobile.active .nav-link:nth-child(5) { transition-delay: 0.42s; }
+        .nav-mobile.active .nav-link:nth-child(6) { transition-delay: 0.50s; }
+        
+        .nav-mobile .nav-link:active {
+            color: var(--gold);
+        }
+        
+        @media (min-width: 1024px) {
+            .nav-mobile {
+                display: none;
+            }
+        }
+        
+        /* ==================== SECTIONS ==================== */
+        section {
+            position: relative;
+            min-height: 100vh;
+            padding: var(--spacing-xl) var(--spacing-xs);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        @media (min-width: 768px) {
+            section {
+                padding: var(--spacing-xl) var(--spacing-md);
+            }
+        }
+        
+        /* ==================== HERO ==================== */
+        .hero {
+            flex-direction: column;
+            text-align: center;
+            padding-top: 120px;
+        }
+        
+        .hero-content {
+            z-index: 1;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .hero-badge {
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: var(--spacing-md);
+            font-weight: 500;
+            border: 1px solid var(--gold);
+            display: inline-block;
+            padding: 8px 24px;
+        }
+        
+        .hero-title {
+            font-size: clamp(64px, 15vw, 120px);
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            color: var(--white);
+            font-family: 'Shippori Mincho B1', serif;
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.1;
+        }
+        
+        .hero-subtitle {
+            font-size: clamp(18px, 4vw, 32px);
+            color: var(--white);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 400;
+            line-height: 1.6;
+        }
+        
+        /* モバイルでは1行に、PCでは間を詰めて表示 */
+        .hero-subtitle-text {
+            display: inline;
+        }
+        
+        .hero-description {
+            font-size: clamp(13px, 3vw, 16px);
+            letter-spacing: 0.25em;
+            color: var(--grey);
+            text-transform: uppercase;
+            font-weight: 300;
+        }
+        
+        .scroll-indicator {
+            position: absolute;
+            bottom: var(--spacing-md);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .scroll-text {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: var(--grey);
+            text-transform: uppercase;
+        }
+        
+        .scroll-line {
+            width: 1px;
+            height: 60px;
+            background: linear-gradient(to bottom, var(--gold), transparent);
+            animation: scrollPulse 2s ease infinite;
+        }
+        
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.3; transform: translateY(0); }
+            50% { opacity: 1; transform: translateY(10px); }
+        }
+        
+        /* ==================== ABOUT ==================== */
+        .about {
+            flex-direction: column;
+            background: var(--charcoal);
+        }
+        
+        .about-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        
+        .about-label {
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: var(--spacing-md);
+            font-weight: 500;
+        }
+        
+        .about-title {
+            font-size: clamp(32px, 8vw, 56px);
+            font-weight: 400;
+            color: var(--white);
+            margin-bottom: var(--spacing-lg);
+            line-height: 1.4;
+            font-family: 'Shippori Mincho B1', serif;
+        }
+        
+        .about-title span {
+            display: inline;
+        }
+        
+        /* Mobile: 2-line display for About title */
+        @media (max-width: 767px) {
+            .about-title {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+                line-height: 1.3;
+            }
+            
+            .about-title span {
+                display: block;
+            }
+        }
+        
+        .about-poem {
+            font-size: clamp(16px, 3.5vw, 20px);
+            line-height: 2.2;
+            color: var(--light-grey);
+            margin-bottom: var(--spacing-xl);
+            font-weight: 300;
+        }
+        
+        .about-links {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-top: var(--spacing-xl);
+        }
+        
+        @media (min-width: 768px) {
+            .about-links {
+                flex-direction: row;
+                justify-content: center;
+                gap: var(--spacing-md);
+            }
+        }
+        
+        .about-link {
+            display: inline-block;
+            padding: 16px 40px;
+            border: 1px solid var(--gold);
+            color: var(--white);
+            text-decoration: none;
+            font-size: 13px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            transition: all 0.4s ease;
+        }
+        
+        .about-link:active {
+            background: var(--gold);
+            color: var(--black);
+        }
+        
+        @media (min-width: 1024px) {
+            .about-link:hover {
+                background: var(--gold);
+                color: var(--black);
+            }
+        }
+        
+        /* ==================== PHILOSOPHY ==================== */
+        .philosophy {
+            background: var(--black);
+        }
+        
+        .philosophy-grid {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: grid;
+            gap: var(--spacing-md);
+        }
+        
+        @media (min-width: 768px) {
+            .philosophy-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (min-width: 1024px) {
+            .philosophy-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: var(--spacing-lg);
+            }
+        }
+        
+        .philosophy-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            padding: var(--spacing-lg) var(--spacing-md);
+            border: 1px solid rgba(201, 169, 97, 0.1);
+            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .philosophy-card:active {
+            transform: translateY(-8px);
+            border-color: rgba(201, 169, 97, 0.3);
+        }
+        
+        @media (min-width: 1024px) {
+            .philosophy-card:hover {
+                transform: translateY(-20px);
+                border-color: rgba(201, 169, 97, 0.4);
+                box-shadow: 0 30px 60px rgba(201, 169, 97, 0.15);
+            }
+        }
+        
+        .philosophy-number {
+            font-size: 56px;
+            font-weight: 400;
+            color: var(--gold);
+            font-family: 'Shippori Mincho B1', serif;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .philosophy-card h3 {
+            font-size: clamp(20px, 4vw, 28px);
+            font-weight: 400;
+            color: var(--white);
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.5;
+        }
+        
+        .philosophy-subtitle {
+            font-size: clamp(13px, 2.5vw, 15px);
+            color: var(--grey);
+            margin-bottom: var(--spacing-sm);
+            line-height: 1.8;
+            font-weight: 400;
+        }
+        
+        .philosophy-card p {
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 2;
+            color: var(--light-grey);
+            font-weight: 300;
+        }
+        
+        /* ==================== VISION ==================== */
+        .vision {
+            background: var(--charcoal);
+            flex-direction: column;
+        }
+        
+        .vision-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+        }
+        
+        .vision-quote {
+            font-size: clamp(36px, 8vw, 64px);
+            font-weight: 400;
+            text-align: center;
+            line-height: 1.4;
+            margin-bottom: var(--spacing-xl);
+            font-family: 'Shippori Mincho B1', serif;
+        }
+        
+        .vision-line {
+            display: block;
+        }
+        
+        .vision-highlight {
+            color: var(--gold);
+        }
+        
+        .vision-subtext {
+            font-size: clamp(16px, 3.5vw, 20px);
+            color: var(--grey);
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            letter-spacing: 0.05em;
+        }
+        
+        .vision-drivers {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+        
+        @media (min-width: 1024px) {
+            .vision-drivers {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .driver-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+            padding: var(--spacing-lg);
+            border: 1px solid rgba(201, 169, 97, 0.1);
+            transition: all 0.5s ease;
+        }
+        
+        .driver-card:active {
+            border-color: rgba(201, 169, 97, 0.3);
+        }
+        
+        @media (min-width: 1024px) {
+            .driver-card:hover {
+                border-color: rgba(201, 169, 97, 0.4);
+                transform: translateY(-10px);
+            }
+        }
+        
+        .driver-title {
+            font-size: clamp(20px, 4vw, 28px);
+            color: var(--gold);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        
+        .driver-description {
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 2;
+            color: var(--light-grey);
+            font-weight: 300;
+        }
+        
+        /* ==================== BRANDS ==================== */
+        .brands {
+            background: var(--black);
+            flex-direction: column;
+        }
+        
+        .section-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            width: 100%;
+        }
+        
+        .section-label {
+            font-size: 11px;
+            letter-spacing: 0.3em;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .section-title {
+            font-size: clamp(36px, 8vw, 56px);
+            font-weight: 400;
+            color: var(--white);
+            font-family: 'Shippori Mincho B1', serif;
+        }
+        
+        .section-title span {
+            display: inline;
+        }
+        
+        /* Mobile line break for section title */
+        @media (max-width: 767px) {
+            .section-title.brands-title {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+                line-height: 1.3;
+            }
+            
+            .section-title.brands-title span {
+                display: block;
+            }
+        }
+        
+        .brands-intro {
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 2;
+            color: var(--light-grey);
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto var(--spacing-xl);
+            font-weight: 300;
+        }
+        
+        .brands-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            gap: var(--spacing-lg);
+        }
+        
+        @media (min-width: 1024px) {
+            .brands-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        .brand-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+            padding: var(--spacing-lg);
+            border: 1px solid rgba(201, 169, 97, 0.15);
+            transition: all 0.5s ease;
+            position: relative;
+        }
+        
+        .brand-card:active {
+            border-color: rgba(201, 169, 97, 0.4);
+        }
+        
+        @media (min-width: 1024px) {
+            .brand-card:hover {
+                border-color: rgba(201, 169, 97, 0.5);
+                transform: translateY(-15px);
+                box-shadow: 0 20px 40px rgba(201, 169, 97, 0.1);
+            }
+        }
+        
+        .brand-status {
+            display: inline-block;
+            font-size: 10px;
+            letter-spacing: 0.2em;
+            color: var(--gold);
+            text-transform: uppercase;
+            padding: 6px 16px;
+            border: 1px solid var(--gold);
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .brand-status.rd {
+            color: var(--grey);
+            border-color: var(--grey);
+        }
+        
+        .brand-name {
+            font-size: clamp(28px, 5vw, 40px);
+            font-weight: 500;
+            color: var(--white);
+            margin-bottom: var(--spacing-xs);
+            font-family: 'Shippori Mincho B1', serif;
+            letter-spacing: 0.1em;
+        }
+        
+        .brand-category {
+            font-size: 13px;
+            color: var(--grey);
+            margin-bottom: var(--spacing-md);
+            letter-spacing: 0.15em;
+        }
+        
+        .brand-description {
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 2;
+            color: var(--light-grey);
+            font-weight: 300;
+        }
+        
+        .brand-link {
+            display: inline-block;
+            margin-top: var(--spacing-md);
+            padding: 12px 32px;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 12px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+        }
+        
+        .brand-link:active {
+            background: var(--gold);
+            color: var(--black);
+        }
+        
+        @media (min-width: 1024px) {
+            .brand-link:hover {
+                background: var(--gold);
+                color: var(--black);
+            }
+        }
+        
+        /* ==================== COMPANY ==================== */
+        .company {
+            background: var(--charcoal);
+            flex-direction: column;
+        }
+        
+        .company-content {
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        
+        .company-grid {
+            display: grid;
+            gap: var(--spacing-md);
+        }
+        
+        @media (min-width: 768px) {
+            .company-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: var(--spacing-lg);
+            }
+        }
+        
+        .company-item {
+            padding: var(--spacing-md);
+            border-bottom: 1px solid rgba(201, 169, 97, 0.1);
+        }
+        
+        .company-label {
+            font-size: 11px;
+            letter-spacing: 0.25em;
+            color: var(--gold);
+            text-transform: uppercase;
+            margin-bottom: var(--spacing-xs);
+            font-weight: 500;
+        }
+        
+        .company-value {
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 1.8;
+            color: var(--white);
+            font-weight: 300;
+        }
+        
+        .history-section {
+            margin-top: var(--spacing-xl);
+            padding-top: var(--spacing-lg);
+            border-top: 1px solid rgba(201, 169, 97, 0.1);
+        }
+        
+        .history-title {
+            font-size: clamp(24px, 5vw, 32px);
+            color: var(--white);
+            margin-bottom: var(--spacing-xl);
+            font-family: 'Shippori Mincho B1', serif;
+            text-align: center;
+        }
+        
+        .history-item {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+            margin-bottom: var(--spacing-lg);
+            padding: var(--spacing-md);
+            border-left: 2px solid var(--gold);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+        }
+        
+        @media (min-width: 768px) {
+            .history-item {
+                flex-direction: row;
+                gap: var(--spacing-lg);
+            }
+        }
+        
+        .history-year {
+            font-size: clamp(20px, 4vw, 28px);
+            color: var(--gold);
+            font-weight: 500;
+            min-width: 120px;
+            font-family: 'Shippori Mincho B1', serif;
+            flex-shrink: 0;
+        }
+        
+        .history-content {
+            flex: 1;
+        }
+        
+        .history-label {
+            font-size: clamp(16px, 3.5vw, 20px);
+            line-height: 1.6;
+            color: var(--white);
+            font-weight: 500;
+            margin-bottom: var(--spacing-xs);
+        }
+        
+        .history-description {
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 2;
+            color: var(--light-grey);
+            font-weight: 300;
+        }
+        
+        /* ==================== CONTACT ==================== */
+        .contact {
+            background: var(--black);
+            flex-direction: column;
+        }
+        
+        .contact-intro {
+            font-size: clamp(14px, 3vw, 16px);
+            line-height: 2;
+            color: var(--light-grey);
+            text-align: center;
+            max-width: 800px;
+            margin: 0 auto var(--spacing-xl);
+            font-weight: 300;
+        }
+        
+        /* Mobile: 2-line display for contact intro */
+        @media (max-width: 767px) {
+            .contact-intro {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 0;
+                line-height: 1.8;
+            }
+        }
+        
+        .contact-content {
+            width: 100%;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .contact-form {
+            width: 100%;
+        }
+        
+        .form-group {
+            margin-bottom: var(--spacing-lg);
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 12px;
+            letter-spacing: 0.25em;
+            color: var(--white);
+            text-transform: uppercase;
+            margin-bottom: var(--spacing-sm);
+            font-weight: 400;
+        }
+        
+        .form-input,
+        .form-textarea,
+        .form-select {
+            width: 100%;
+            padding: var(--spacing-sm) var(--spacing-xs);
+            border: none;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            font-size: 16px;
+            color: var(--white);
+            font-family: 'Shippori Mincho', serif;
+            transition: border-color 0.3s ease;
+        }
+        
+        .form-select {
+            cursor: pointer;
+        }
+        
+        .form-select option {
+            background: var(--charcoal);
+            color: var(--white);
+        }
+        
+        .form-input:focus,
+        .form-textarea:focus,
+        .form-select:focus {
+            outline: none;
+            border-bottom-color: var(--gold);
+        }
+        
+        .form-textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        
+        .form-button {
+            width: 100%;
+            padding: var(--spacing-sm);
+            background: transparent;
+            border: 2px solid var(--gold);
+            color: var(--gold);
+            font-size: 14px;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            font-family: 'Shippori Mincho', serif;
+            font-weight: 500;
+        }
+        
+        .form-button:active {
+            background: var(--gold);
+            color: var(--black);
+        }
+        
+        @media (min-width: 1024px) {
+            .form-button:hover {
+                background: var(--gold);
+                color: var(--black);
+            }
+        }
+        
+        /* ==================== FOOTER ==================== */
+        footer {
+            background: var(--charcoal);
+            padding: var(--spacing-xl) var(--spacing-xs);
+            text-align: center;
+        }
+        
+        .footer-logo {
+            font-size: clamp(32px, 8vw, 48px);
+            font-weight: 500;
+            letter-spacing: 0.2em;
+            color: var(--white);
+            font-family: 'Shippori Mincho B1', serif;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .footer-tagline {
+            font-size: clamp(14px, 3vw, 18px);
+            color: var(--grey);
+            margin-bottom: var(--spacing-md);
+            font-weight: 300;
+        }
+        
+        .footer-copyright {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            color: var(--grey);
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div class="loading">
+        <div class="loading-logo">AURA inc.</div>
+        <div class="loading-bar">
+            <div class="loading-progress"></div>
+        </div>
+    </div>
+    
+    <!-- Custom Cursor -->
+    <div class="cursor"></div>
+    <div class="cursor-follower"></div>
+    
+    <!-- WebGL Background -->
+    <canvas id="canvas"></canvas>
+    
+    <!-- Header -->
+    <header>
+        <div class="header-container">
+            <a href="#hero" class="logo">AURA inc.</a>
+            
+            <!-- Desktop Navigation -->
+            <nav class="nav-desktop">
+                <a href="#about" class="nav-link">About</a>
+                <a href="#philosophy" class="nav-link">Philosophy</a>
+                <a href="#vision" class="nav-link">Vision</a>
+                <a href="#brands" class="nav-link">Brands</a>
+                <a href="#company" class="nav-link">Company</a>
+                <a href="#contact" class="nav-link">Contact</a>
+            </nav>
+            
+            <!-- Mobile Menu Toggle -->
+            <button class="menu-toggle" aria-label="Menu">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+        </div>
+    </header>
+    
+    <!-- Mobile Navigation -->
+    <nav class="nav-mobile">
+        <a href="#about" class="nav-link">About</a>
+        <a href="#philosophy" class="nav-link">Philosophy</a>
+        <a href="#vision" class="nav-link">Vision</a>
+        <a href="#brands" class="nav-link">Brands</a>
+        <a href="#company" class="nav-link">Company</a>
+        <a href="#contact" class="nav-link">Contact</a>
+    </nav>
+    
+    <!-- Main -->
+    <main>
+        <!-- Hero -->
+        <section id="hero" class="hero">
+            <div class="hero-content">
+                <div class="hero-badge">Est. 2022</div>
+                <h1 class="hero-title">AURA inc.</h1>
+                <div class="hero-subtitle">
+                    <span class="hero-subtitle-text">"見えない価値"を設計する。</span>
+                </div>
+                <div class="hero-description">Designing The Invisible</div>
+            </div>
+            <div class="scroll-indicator">
+                <div class="scroll-text">Scroll</div>
+                <div class="scroll-line"></div>
+            </div>
+        </section>
+        
+        <!-- About -->
+        <section id="about" class="about">
+            <div class="about-container">
+                <div class="about-label">About</div>
+                <h2 class="about-title"><span>"見えない価値"を</span><span>設計する。</span></h2>
+                <div class="about-poem">
+                    私たちは、モノを作っているのではありません。<br>
+                    人が"価値"と認識する、その"枠組み"自体を設計しています。<br><br>
+                    常識を疑う知性で、見えない深層を解き明かし、<br>
+                    揺るぎない価値を構築します。<br><br>
+                    AURAとは、その探求の総体です。<br>
+                    私たちは、美しさの"次"を定義します。
+                </div>
+                <div class="about-links">
+                    <a href="#philosophy-1" class="about-link">I. 懐疑する知性</a>
+                    <a href="#philosophy-2" class="about-link">II. 見えざる深層</a>
+                    <a href="#philosophy-3" class="about-link">III. 揺るぎなき価値</a>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Philosophy -->
+        <section id="philosophy" class="philosophy">
+            <div class="philosophy-grid">
+                <div class="philosophy-card" id="philosophy-1">
+                    <div class="philosophy-number">I</div>
+                    <h3>懐疑する知性<br><span style="font-size: 0.55em; letter-spacing: 0.12em; opacity: 0.7; font-weight: 300;">THE DOUBTING INTELLECT</span></h3>
+                    <p class="philosophy-subtitle">常識への懐疑と、独自の"解"の探求</p>
+                    <p>AURAは、市場に溢れる"当たり前"を、まず疑うことから始める。本当にそれは、本質なのか？ 惰性的な思考停止ではないか？ 私たちは、既存の枠組み（常識）を破壊し、独自の洞察とテクノロジーによって、全く新しい"解"を探求し続ける。その"解"こそが、次の常識となる。</p>
+                </div>
+                <div class="philosophy-card" id="philosophy-2">
+                    <div class="philosophy-number">II</div>
+                    <h3>見えざる深層<br><span style="font-size: 0.55em; letter-spacing: 0.12em; opacity: 0.7; font-weight: 300;">THE UNSEEN INSIGHT</span></h3>
+                    <p class="philosophy-subtitle">深層心理（インサイト）への、哲学的アプローチ</p>
+                    <p>人が"美しい"と感じる心の深層には、何があるのか。AURAは、表面的なニーズではなく、本人さえ気づいていない「深層心理（インサイト）」を哲学的に解き明かす。私たちが生み出すブランド（製品）は、その"解"の、一つの表現である。</p>
+                </div>
+                <div class="philosophy-card" id="philosophy-3">
+                    <div class="philosophy-number">III</div>
+                    <h3>揺るぎなき価値<br><span style="font-size: 0.55em; letter-spacing: 0.12em; opacity: 0.7; font-weight: 300;">THE UNYIELDING VALUE</span></h3>
+                    <p class="philosophy-subtitle">永続的"価値"と、文化的"美意識"の融合</p>
+                    <p>AURAは、一過性の流行（トレンド）を創造しない。私たちが目指すのは、時代を超えて愛される「永続的な価値」の創造である。日本の『金継ぎ』のように、その土地に根差す「文化的美意識」を現代の解釈で融合させ、揺るぎない"価値"として世界に提示する。</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Vision -->
+        <section id="vision" class="vision">
+            <div class="vision-quote">
+                <span class="vision-line">美しさの</span>
+                <span class="vision-line"><span class="vision-highlight">次</span>を定義する</span>
+            </div>
+            <div class="vision-subtext">その定義を、3つのドライバー（駆動軸）で実現します。</div>
+            <div class="vision-drivers">
+                <div class="driver-card">
+                    <div class="driver-title">Technology</div>
+                    <div class="driver-description">独自の処方開発（"懐疑する知性"の応用）により、既存の"量"の常識を超えるソリューションを開発します。</div>
+                </div>
+                <div class="driver-card">
+                    <div class="driver-title">Insight</div>
+                    <div class="driver-description">AIと哲学（"見えざる深層"の応用）を横断し、未だ言語化されていないニーズを掘り起こし、新たな市場を顕在化させます。</div>
+                </div>
+                <div class="driver-card">
+                    <div class="driver-title">Culture</div>
+                    <div class="driver-description">世界に散らばる文化的"美意識"（"揺るぎなき価値"の応用）を再編集し、現代における永続的価値として提案します。</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Brands -->
+        <section id="brands" class="brands">
+            <div class="section-header">
+                <div class="section-label">Brands</div>
+                <h2 class="section-title brands-title"><span>ブランド</span><span>ポートフォリオ</span></h2>
+            </div>
+            <p class="brands-intro">AURAの哲学は、以下のブランド群によって具現化されます。</p>
+            <div class="brands-grid">
+                <!-- Brand 01: TSUGIMI -->
+                <div class="brand-card">
+                    <div class="brand-status">LAUNCHED</div>
+                    <h3 class="brand-name">TSUGIMI</h3>
+                    <div class="brand-category">インナーデザイン事業</div>
+                    <p class="brand-description">"調和"の哲学（Golden Lattice Matrix™）に基づき、内側から輝きをデザインするAURAの第一弾ブランドです。哲学III（揺るぎなき価値）を『金継ぎ』の美意識に託し、提案します。</p>
+                    <a href="#" class="brand-link">Learn More</a>
+                </div>
+                
+                <!-- Brand 02: Project KŪ -->
+                <div class="brand-card">
+                    <div class="brand-status rd">R&D</div>
+                    <h3 class="brand-name">Project: KŪ</h3>
+                    <div class="brand-category">空間センソリー事業</div>
+                    <p class="brand-description">空間を満たす"香り"が人の"認識"に与える影響を研究しています。哲学II（見えざる深層）に基づき、五感を通じた新たな美のソリューションを開発中です。</p>
+                </div>
+                
+                <!-- Brand 03: Project JIN -->
+                <div class="brand-card">
+                    <div class="brand-status rd">R&D</div>
+                    <h3 class="brand-name">Project: JIN</h3>
+                    <div class="brand-category">生体データ事業</div>
+                    <p class="brand-description">生体データを計測・解析し、その日のコンディションを最適化するソリューションを研究しています。哲学I（懐疑する知性）に基づき、従来の画一的なケアを超える、パーソナライズの未来を定義します。</p>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Company -->
+        <section id="company" class="company">
+            <div class="section-header">
+                <div class="section-label">Company</div>
+                <h2 class="section-title">会社情報</h2>
+            </div>
+            <div class="company-content">
+                <div class="company-grid">
+                    <div class="company-item">
+                        <div class="company-label">Company Name</div>
+                        <div class="company-value">オウラ株式会社<br>AURA inc.</div>
+                    </div>
+                    <div class="company-item">
+                        <div class="company-label">Representative</div>
+                        <div class="company-value">森下 陽介<br>Yosuke Morishita</div>
+                    </div>
+                    <div class="company-item">
+                        <div class="company-label">Founded</div>
+                        <div class="company-value">2022.09.15</div>
+                    </div>
+                    <div class="company-item">
+                        <div class="company-label">Headquarters</div>
+                        <div class="company-value">東京都中央区銀座1丁目12番4号N&E･BLD7F</div>
+                    </div>
+                    <div class="company-item">
+                        <div class="company-label">Business</div>
+                        <div class="company-value">ビューティー・イノベーション事業<br>化粧品企画・開発・販売<br>ブランドコンサルティング<br>R&D事業</div>
+                    </div>
+                    <div class="company-item">
+                        <div class="company-label">Vision</div>
+                        <div class="company-value">美しさの"次"を定義する</div>
+                    </div>
+                </div>
+                
+                <!-- History -->
+                <div class="history-section">
+                    <h3 class="history-title">沿革 / History</h3>
+                    
+                    <div class="history-item">
+                        <div class="history-year">2022.09</div>
+                        <div class="history-content">
+                            <div class="history-label">オウラ株式会社 設立<br><span style="font-size: 0.85em; opacity: 0.7;">AURA inc. Founded</span></div>
+                            <div class="history-description">「"美の常識"を、再定義する。」というヴィジョンを掲げ、既存の枠組みに捉われない、新たな価値創造のための探求を開始。</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-item">
+                        <div class="history-year">2023.03</div>
+                        <div class="history-content">
+                            <div class="history-label">哲学の構築<br><span style="font-size: 0.85em; opacity: 0.7;">Philosophy Established</span></div>
+                            <div class="history-description">"常識への懐疑"（哲学 I）に基づき、ビューティー市場の徹底的なリサーチと、"見えざる深層"（哲学 II）の探求を本格化。独自の理論構築に時間を費やすことを決定。</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-item">
+                        <div class="history-year">2023.10</div>
+                        <div class="history-content">
+                            <div class="history-label">AURA Lab 開設<br><span style="font-size: 0.85em; opacity: 0.7;">R&D Division Founded</span></div>
+                            <div class="history-description">哲学とテクノロジーを融合させるR&D部門「AURA Lab (オウラ・ラボ)」を設立。"永続的価値"（哲学 III）の具現化に向けた、中長期的な研究開発体制を構築。</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-item">
+                        <div class="history-year">2024.05</div>
+                        <div class="history-content">
+                            <div class="history-label">事業領域の定義<br><span style="font-size: 0.85em; opacity: 0.7;">Business Fields Defined</span></div>
+                            <div class="history-description">AURA Lab、インナーデザイン、空間センソリー、生体データという3つの事業領域（ドライバー）を特定。各プロジェクトの研究開発に着手。</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-item">
+                        <div class="history-year">2025.03</div>
+                        <div class="history-content">
+                            <div class="history-label">第一ブランド ローンチ<br><span style="font-size: 0.85em; opacity: 0.7;">First Brand Launched</span></div>
+                            <div class="history-description">AURA Labの最初の"解"（Answer）として、インナーデザイン事業ブランド『TSUGIMI』をローンチ。</div>
+                        </div>
+                    </div>
+                    
+                    <div class="history-item">
+                        <div class="history-year">2025.10</div>
+                        <div class="history-content">
+                            <div class="history-label">次世代プロジェクトの推進<br><span style="font-size: 0.85em; opacity: 0.7;">Next Projects Accelerated</span></div>
+                            <div class="history-description">空間センソリー事業『Project: KŪ』および生体データ事業『Project: JIN』のR&D（研究開発）を本格化。美の"次"の定義に向け、AURAは歩みを止めない。</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Contact -->
+        <section id="contact" class="contact">
+            <div class="section-header">
+                <div class="section-label">Contact</div>
+                <h2 class="section-title">お問い合わせ</h2>
+            </div>
+            <p class="contact-intro"><span class="contact-intro-line1">オウラ株式会社へのお問い合わせは、</span><span class="contact-intro-line2">以下のフォームよりご連絡ください。</span></p>
+            <div class="contact-content">
+                <form class="contact-form">
+                    <div class="form-group">
+                        <label class="form-label">お問い合わせ種別 / Inquiry Type</label>
+                        <select class="form-select" required>
+                            <option value="">選択してください</option>
+                            <option value="product">製品に関するお問い合わせ</option>
+                            <option value="business">協業・お取引に関するお問い合わせ</option>
+                            <option value="press">取材・プレスに関するお問い合わせ</option>
+                            <option value="other">その他のお問い合わせ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Company / Organization (法人の方のみ)</label>
+                        <input type="text" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Name</label>
+                        <input type="text" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Email</label>
+                        <input type="email" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Message</label>
+                        <textarea class="form-textarea" required></textarea>
+                    </div>
+                    <button type="submit" class="form-button">Send</button>
+                </form>
+            </div>
+        </section>
+        
+        <!-- Footer -->
+        <footer>
+            <div class="footer-logo">AURA inc.</div>
+            <div class="footer-tagline">"見えない価値"を、設計する。</div>
+            <div class="footer-copyright">© 2025 AURA inc.</div>
+        </footer>
+    </main>
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // ==================== LOADING ====================
+        let progress = 0;
+        const loadingProgress = document.querySelector('.loading-progress');
+        const loading = document.querySelector('.loading');
+        
+        function updateLoading() {
+            progress += Math.random() * 15;
+            if (progress > 100) progress = 100;
+            loadingProgress.style.width = progress + '%';
+            
+            if (progress < 100) {
+                setTimeout(updateLoading, 80);
+            } else {
+                setTimeout(() => {
+                    loading.style.opacity = '0';
+                    loading.style.transition = 'opacity 1s ease';
+                    setTimeout(() => loading.style.display = 'none', 1000);
+                }, 300);
+            }
+        }
+        
+        window.addEventListener('load', () => setTimeout(updateLoading, 300));
+        
+        // ==================== MOBILE MENU ====================
+        const menuToggle = document.querySelector('.menu-toggle');
+        const navMobile = document.querySelector('.nav-mobile');
+        const navLinks = document.querySelectorAll('.nav-mobile .nav-link');
+        
+        menuToggle.addEventListener('click', () => {
+            menuToggle.classList.toggle('active');
+            navMobile.classList.toggle('active');
+            document.body.style.overflow = navMobile.classList.contains('active') ? 'hidden' : '';
+        });
+        
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                menuToggle.classList.remove('active');
+                navMobile.classList.remove('active');
+                document.body.style.overflow = '';
+            });
+        });
+        
+        // ==================== HEADER SCROLL ====================
+        const header = document.querySelector('header');
+        
+        window.addEventListener('scroll', () => {
+            header.classList.toggle('scrolled', window.pageYOffset > 50);
+        }, { passive: true });
+        
+        // ==================== CURSOR (Desktop) ====================
+        if (window.innerWidth >= 1024) {
+            const cursor = document.querySelector('.cursor');
+            const follower = document.querySelector('.cursor-follower');
+            let mouseX = 0, mouseY = 0;
+            let cursorX = 0, cursorY = 0;
+            let followerX = 0, followerY = 0;
+            
+            document.addEventListener('mousemove', (e) => {
+                mouseX = e.clientX;
+                mouseY = e.clientY;
+            });
+            
+            function animateCursor() {
+                cursorX += (mouseX - cursorX) * 0.2;
+                cursorY += (mouseY - cursorY) * 0.2;
+                followerX += (mouseX - followerX) * 0.1;
+                followerY += (mouseY - followerY) * 0.1;
+                
+                cursor.style.left = cursorX + 'px';
+                cursor.style.top = cursorY + 'px';
+                follower.style.left = followerX + 'px';
+                follower.style.top = followerY + 'px';
+                
+                requestAnimationFrame(animateCursor);
+            }
+            
+            animateCursor();
+        }
+        
+        // ==================== WEBGL ====================
+        const canvas = document.getElementById('canvas');
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false });
+        
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        
+        const isMobile = window.innerWidth < 768;
+        const particleCount = isMobile ? 1000 : 3000;
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array(particleCount * 3);
+        const scales = new Float32Array(particleCount);
+        
+        for (let i = 0; i < particleCount * 3; i += 3) {
+            positions[i] = (Math.random() - 0.5) * 100;
+            positions[i + 1] = (Math.random() - 0.5) * 100;
+            positions[i + 2] = (Math.random() - 0.5) * 100;
+            scales[i / 3] = Math.random();
+        }
+        
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        geometry.setAttribute('scale', new THREE.BufferAttribute(scales, 1));
+        
+        const material = new THREE.ShaderMaterial({
+            uniforms: {
+                uTime: { value: 0 },
+                uSize: { value: isMobile ? 60 : 80 }
+            },
+            vertexShader: `
+                attribute float scale;
+                uniform float uTime;
+                uniform float uSize;
+                
+                void main() {
+                    vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+                    modelPosition.y += sin(uTime * 0.5 + modelPosition.x * 0.3) * 0.5;
+                    
+                    vec4 viewPosition = viewMatrix * modelPosition;
+                    gl_Position = projectionMatrix * viewPosition;
+                    gl_PointSize = uSize * scale * (1.0 / -viewPosition.z);
+                }
+            `,
+            fragmentShader: `
+                void main() {
+                    float dist = distance(gl_PointCoord, vec2(0.5));
+                    float strength = 0.05 / dist - 0.1;
+                    vec3 color = vec3(0.79, 0.66, 0.38);
+                    gl_FragColor = vec4(color, strength);
+                }
+            `,
+            transparent: true,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false
+        });
+        
+        const particles = new THREE.Points(geometry, material);
+        scene.add(particles);
+        camera.position.z = 40;
+        
+        const clock = new THREE.Clock();
+        
+        function animate() {
+            material.uniforms.uTime.value = clock.getElapsedTime();
+            particles.rotation.y += 0.0003;
+            renderer.render(scene, camera);
+            requestAnimationFrame(animate);
+        }
+        
+        animate();
+        
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }, { passive: true });
+        
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                renderer.setAnimationLoop(null);
+            } else {
+                animate();
+            }
+        });
+    </script>
+</body>
+</html>
